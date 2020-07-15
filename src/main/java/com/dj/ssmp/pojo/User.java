@@ -18,7 +18,7 @@ public class User {
     private Integer sex;
     private String phoneNum;
     private String email;
-    /**1运动 2看书 3游戏*/
+    /**1运动 2看书 3游戏 5羽毛球*/
     private Integer hobby;
 
 }
