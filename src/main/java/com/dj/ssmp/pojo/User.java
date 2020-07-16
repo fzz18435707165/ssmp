@@ -14,7 +14,7 @@ public class User {
     private String userName;
     private String userPwd;
     private Integer age;
-    /**1男 2女*/
+    /**1男 2女 3保密*/
     private Integer sex;
     private String phoneNum;
     private String email;
