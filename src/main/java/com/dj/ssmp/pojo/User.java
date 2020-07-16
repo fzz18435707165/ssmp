@@ -22,5 +22,7 @@ public class User {
     /**1运动 2看书 3游戏 4足球 5羽毛球6篮球 7*/
     private Integer hobby;
 
+    private String a;
+
 
 }
