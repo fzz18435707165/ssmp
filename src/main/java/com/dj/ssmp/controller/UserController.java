@@ -20,6 +20,11 @@ import java.util.*;
 @RequestMapping("/user/")
 public class UserController {
 
+
+    @RequestMapping("hello")
+    public String hello(){
+        return "hello";
+    }
     @Autowired
     private UserService userService;
 
