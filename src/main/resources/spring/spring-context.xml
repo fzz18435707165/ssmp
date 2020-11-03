@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- spring schema(spring xml的文档结构的描述) -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.3.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	<!-- 自动扫包，完成Bean的创建和自动依赖注入 -->
+	<context:component-scan base-package="com.dj.ssmp">
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+	<!-- 加入Properties文件读取 -->
+	<context:property-placeholder location="classpath:prop/*.properties"/>
+
+	<!-- 配置数据源-使用c3p0连接池 -->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="driverClass" value="${jdbc.driverClassName}"/>
+		<property name="jdbcUrl" value="${jdbc.url}"/>
+		<property name="user" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+		<!--连接池中保留的最大连接数。默认值: 15 -->
+		<property name="maxPoolSize" value="20"/>
+		<!-- 连接池中保留的最小连接数，默认为：3 -->
+		<property name="minPoolSize" value="2"/>
+		<!--最大空闲时间，60秒内未使用则连接被丢弃。若为0则永不丢弃。默认值: 0 -->
+		<property name="maxIdleTime" value="30"/>
+	</bean>
+
+	<!-- MP Mapper扫包  -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- mapper层的扫包路径 -->
+		<property name="basePackage" value="com.dj.ssmp.mapper"/>
+	</bean>
+
+	<!--
+        MP SqlSessionFactory 和原始Mybatis的SqlSessionFactory没有太大区别，MP只是进行了部分改造
+    -->
+	<bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
+		<!-- 数据源 -->
+		<property name="dataSource" ref="dataSource"/>
+		<!-- 插件 -->
+		<property name="plugins">
+			<array>
+				<!-- 分页插件拦截器 -->
+				<bean class="com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor"/>
+			</array>
+		</property>
+		<!-- Mybatis配置 -->
+		<!--<property name="configLocation" value="classpath:mybatis/mybatis-config.xml" />-->
+		<property name="configuration">
+			<bean class="com.baomidou.mybatisplus.core.MybatisConfiguration">
+				<!-- 驼峰下划线自动转化 -->
+				<property name="mapUnderscoreToCamelCase" value="true"/>
+			</bean>
+		</property>
+		<property name="mapperLocations" value="classpath:mapper/**/*.xml"/>
+	</bean>
+
+	<!-- 配置事务管理器  service -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+
+	<!-- 配置事务传播属性 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<!-- 配置事务的自动提交和回滚 -->
+			<tx:method name="add*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="save*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="insert*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="update*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="modify*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="del*" propagation="REQUIRED" rollback-for="Exception"/>
+			<tx:method name="batch*" propagation="REQUIRED" rollback-for="Exception"/>
+			<!-- 除上述方法名开头的事务配置为只读事务，只读事务可以提高效率 -->
+			<tx:method name="*" read-only="true"/>
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 配置事务切面,并关联事务传播属性 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* com.dj.ssmp.service..*.*.*(..) )" id="txPointCut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointCut"/>
+	</aop:config>
+
+</beans>
